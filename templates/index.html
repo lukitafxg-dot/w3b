@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 FSOCIETY - DDoS Tool</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0a0a0a; 
+            color: #00ff00; 
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .header { 
+            text-align: center; 
+            padding: 30px 0; 
+            border-bottom: 2px solid #ff0000;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 120px; height: 120px;
+            margin: 0 auto 20px;
+            background: #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+        .title { 
+            font-size: 3em; 
+            color: #ff0000; 
+            text-shadow: 0 0 10px #ff0000;
+            margin-bottom: 10px;
+        }
+        .slogan { color: #ff4444; font-style: italic; }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+        
+        .control-panel {
+            background: #111;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #ff0000; font-weight: bold; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #ff0000;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        button:hover { background: #cc0000; transform: translateY(-2px); }
+        button:disabled { background: #666; cursor: not-allowed; transform: none; }
+        
+        .log-container {
+            background: #111;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+        }
+        .log-output {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #00ff00;
+        }
+        .log-line {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .status-panel {
+            background: #111;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-item {
+            background: #222;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8em;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        .stat-label { color: #ff4444; font-size: 0.9em; }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #ff0000;
+            margin-top: 30px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">F</div>
+            <h1 class="title">FSOCIETY</h1>
+            <p class="slogan">WE ARE FSOCIETY. WE ARE FINALLY FREE.</p>
+        </div>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <h2 style="color: #ff0000; margin-bottom: 20px;">CONTROL PANEL</h2>
+                
+                <div class="form-group">
+                    <label for="targetUrl">TARGET URL:</label>
+                    <input type="text" id="targetUrl" placeholder="https://example.com" value="">
+                </div>
+
+                <div class="form-group">
+                    <label for="numRequests">NUMBER OF REQUESTS:</label>
+                    <input type="number" id="numRequests" value="500" min="10" max="10000">
+                </div>
+
+                <button id="startBtn" onclick="startAttack()">🚀 START ATTACK</button>
+                <button id="stopBtn" onclick="stopAttack()" style="background: #333;" disabled>⏹ STOP ATTACK</button>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #222; border-radius: 5px;">
+                    <p style="color: #ff4444; font-size: 12px;">
+                        <strong>⚠️ WARNING:</strong> Educational purposes only. Use responsibly.
+                    </p>
+                </div>
+            </div>
+
+            <div class="log-container">
+                <h3 style="color: #ff0000; margin-bottom: 15px;">ATTACK LOGS</h3>
+                <div class="log-output" id="logOutput">
+                    <div class="log-line">>> FSOCIETY TOOL v2.0 - READY</div>
+                    <div class="log-line">>> Multi-threaded DDoS Engine Loaded</div>
+                    <div class="log-line">>> Proxy Scraper Active</div>
+                    <div class="log-line">>> Waiting for target...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-panel">
+            <h3 style="color: #ff0000; margin-bottom: 15px;">ATTACK STATUS</h3>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="requestsSent">0</div>
+                    <div class="stat-label">REQUESTS SENT</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="successRate">0%</div>
+                    <div class="stat-label">SUCCESS RATE</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="attackTime">0s</div>
+                    <div class="stat-label">DURATION</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="status">IDLE</div>
+                    <div class="stat-label">STATUS</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>FSOCIETY DDoS Tool v2.0 | Use at your own risk</p>
+        </div>
+    </div>
+
+    <script>
+        let currentAttackId = null;
+        let logInterval = null;
+        let startTime = null;
+        let requestsCount = 0;
+
+        function addLog(message) {
+            const logOutput = document.getElementById('logOutput');
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.textContent = '>> ' + message;
+            logOutput.appendChild(logLine);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            
+            // Contar requests
+            if (message.includes('Status:') || message.includes('Error:')) {
+                requestsCount++;
+                document.getElementById('requestsSent').textContent = requestsCount;
+            }
+        }
+
+        async function startAttack() {
+            const targetUrl = document.getElementById('targetUrl').value;
+            const numRequests = document.getElementById('numRequests').value;
+
+            if (!targetUrl) {
+                alert('Enter target URL!');
+                return;
+            }
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('status').textContent = 'ATTACKING';
+            document.getElementById('status').style.color = '#ff0000';
+
+            startTime = Date.now();
+            requestsCount = 0;
+            
+            try {
+                const response = await fetch('/start_attack', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        target_url: targetUrl,
+                        num_requests: parseInt(numRequests)
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentAttackId = data.attack_id;
+                    addLog('🚀 ATTACK INITIATED: ' + targetUrl);
+                    addLog('💣 REQUESTS: ' + numRequests);
+                    addLog('🔧 ATTACK ID: ' + currentAttackId);
+                    
+                    logInterval = setInterval(fetchLogs, 1000);
+                    setInterval(updateTime, 1000);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                addLog('❌ ERROR: ' + error.message);
+                resetControls();
+            }
+        }
+
+        function updateTime() {
+            if (startTime) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('attackTime').textContent = elapsed + 's';
+            }
+        }
+
+        async function stopAttack() {
+            if (currentAttackId) {
+                try {
+                    await fetch('/stop_attack/' + currentAttackId, {method: 'POST'});
+                    addLog('⏹ ATTACK STOPPED BY USER');
+                } catch (error) {
+                    addLog('❌ STOP ERROR: ' + error.message);
+                }
+            }
+            resetControls();
+        }
+
+        async function fetchLogs() {
+            if (!currentAttackId) return;
+
+            try {
+                const response = await fetch('/get_logs/' + currentAttackId);
+                const data = await response.json();
+                
+                if (data.logs && data.logs.length > 0) {
+                    const logOutput = document.getElementById('logOutput');
+                    const currentLogs = Array.from(logOutput.children).map(child => child.textContent.replace('>> ', ''));
+                    
+                    data.logs.forEach(log => {
+                        if (!currentLogs.includes(log)) {
+                            addLog(log);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Log fetch error:', error);
+            }
+        }
+
+        function resetControls() {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').textContent = 'IDLE';
+            document.getElementById('status').style.color = '#00ff00';
+            
+            if (logInterval) {
+                clearInterval(logInterval);
+                logInterval = null;
+            }
+            
+            currentAttackId = null;
+            startTime = null;
+        }
+
+        // Enter key support
+        document.getElementById('targetUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startAttack();
+        });
+        document.getElementById('numRequests').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') startAttack();
+        });
+    </script>
+</body>
+</html>

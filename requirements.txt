@@ -1,0 +1,4 @@
+flask==2.3.3
+aiohttp==3.8.5
+asyncio
+requests==2.31.0
